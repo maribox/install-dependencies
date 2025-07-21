@@ -5,29 +5,36 @@ A cross-platform script that automatically installs missing shared library depen
 ## Usage
 
 ```bash
-./install-dependencies.sh <binary> [--distro=DISTRO] [--arch=ARCH]
+./install-dependencies.sh <binary> [--distro=DISTRO] [--arch=ARCH] [--untested]
 ```
 
 ### Examples
 
 ```bash
-# Auto-detect distribution and architecture
+# Auto-detect distribution and architecture (Fedora/RHEL only)
 ./install-dependencies.sh ./my-binary
 
-# Override distribution detection
-./install-dependencies.sh ./my-binary --distro=debian
+# Use untested distribution
+./install-dependencies.sh ./my-binary --untested
+
+# Override distribution detection with untested flag
+./install-dependencies.sh ./my-binary --distro=debian --untested
 
 # Override both distribution and architecture
-./install-dependencies.sh ./my-binary --distro=arch --arch=aarch64
+./install-dependencies.sh ./my-binary --distro=arch --arch=aarch64 --untested
 ```
 
-## Supported Distributions
+## Testing Status
 
-- **Fedora/RHEL**: Uses `dnf` or `yum`
-- **Debian/Ubuntu**: Uses `apt` and `apt-file`
-- **openSUSE**: Uses `zypper`
-- **Arch Linux**: Uses `pacman`
-- **Alpine Linux**: Uses `apk`
+⚠️ **WARNING**: Only Fedora/RHEL distributions have been tested!
+
+- **Fedora/RHEL**: ✅ **TESTED** - Uses `dnf` or `yum`
+- **Debian/Ubuntu**: ❓ **UNTESTED** - Uses `apt` and `apt-file`
+- **openSUSE**: ❓ **UNTESTED** - Uses `zypper`
+- **Arch Linux**: ❓ **UNTESTED** - Uses `pacman`
+- **Alpine Linux**: ❓ **UNTESTED** - Uses `apk`
+
+To use untested distributions, you must add the `--untested` flag.
 
 ## How It Works
 
@@ -40,7 +47,7 @@ A cross-platform script that automatically installs missing shared library depen
 
 ## Extending for New Distributions
 
-To add support for a new distribution, you need to modify three functions:
+To add support for a new distribution, you need to modify four functions:
 
 ### 1. `detect_distro()`
 
@@ -141,6 +148,16 @@ sudo apt-file update
 No additional prerequisites - the script uses built-in package manager capabilities.
 
 ## Contributing
+
+**I need testers!** If you successfully use this script on distributions other than Fedora/RHEL, please let me know by:
+
+1. Fork the repository
+2. Test the script on your distribution using `--untested` flag
+3. If it works, submit a PR updating the testing status in the README
+4. If it doesn't work, submit a PR with fixes following the patterns below
+5. Include details about what you tested and any issues encountered
+
+### Adding Support for New Distributions
 
 1. Fork the repository
 2. Add support for your distribution following the patterns above

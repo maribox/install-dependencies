@@ -75,7 +75,8 @@ search_package() {
             apk search --exact "$lib" 2>/dev/null | head -n1 | cut -d'-' -f1
             ;;
         *)
-            echo ""
+            echo "Error: No search implementation for distribution: $distro" >&2
+            return 1
             ;;
     esac
 }
@@ -108,24 +109,29 @@ install_package() {
 }
 
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 <binary> [--distro=DISTRO] [--arch=ARCH]"
+    echo "Usage: $0 <binary> [--distro=DISTRO] [--arch=ARCH] [--untested]"
     echo ""
     echo "Options:"
     echo "  --distro=DISTRO  Override auto-detected distribution (fedora, rhel, debian, opensuse, arch, alpine)"
     echo "  --arch=ARCH      Override auto-detected architecture"
+    echo "  --untested       Allow running on untested distributions (required for non-Fedora/RHEL)"
     echo ""
     echo "Supported distributions:"
-    echo "  - Fedora/RHEL (dnf/yum)"
-    echo "  - Debian/Ubuntu (apt)"
-    echo "  - openSUSE (zypper)"
-    echo "  - Arch Linux (pacman)"
-    echo "  - Alpine Linux (apk)"
+    echo "  - Fedora/RHEL (dnf/yum) - TESTED"
+    echo "  - Debian/Ubuntu (apt) - UNTESTED"
+    echo "  - openSUSE (zypper) - UNTESTED"
+    echo "  - Arch Linux (pacman) - UNTESTED"
+    echo "  - Alpine Linux (apk) - UNTESTED"
+    echo ""
+    echo "WARNING: Only Fedora/RHEL has been tested. Use --untested flag for other distros."
+    echo "If you test on other distros and it works, please submit a PR!"
     exit 1
 fi
 
 BINARY="$1"
 DISTRO=""
 ARCH=$(uname -m)
+ALLOW_UNTESTED=false
 
 shift
 while [[ $# -gt 0 ]]; do
@@ -136,6 +142,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --arch=*)
             ARCH="${1#*=}"
+            shift
+            ;;
+        --untested)
+            ALLOW_UNTESTED=true
             shift
             ;;
         *)
@@ -155,6 +165,14 @@ if [ "$DISTRO" = "unknown" ]; then
     exit 1
 fi
 
+if [ "$DISTRO" != "fedora" ] && [ "$DISTRO" != "rhel" ] && [ "$ALLOW_UNTESTED" = false ]; then
+    echo "ERROR: Distribution '$DISTRO' is untested!"
+    echo "Only Fedora/RHEL has been tested. Other distributions may not work correctly."
+    echo "Use --untested flag to proceed anyway."
+    echo "If it works for you, please submit a PR to help improve this script!"
+    exit 1
+fi
+
 if [ ! -f "$BINARY" ]; then
     echo "Error: Binary '$BINARY' not found"
     exit 1
@@ -162,6 +180,9 @@ fi
 
 echo "Distribution: $DISTRO"
 echo "Architecture: $ARCH"
+if [ "$DISTRO" != "fedora" ] && [ "$DISTRO" != "rhel" ]; then
+    echo "WARNING: This distribution is untested - proceed with caution!"
+fi
 echo ""
 
 missing_libs=$(ldd "$BINARY" 2>/dev/null | grep "not found" | awk '{print $1}')
